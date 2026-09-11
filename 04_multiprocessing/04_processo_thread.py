@@ -23,33 +23,17 @@ if __name__ == '__main__':
     print('pid da main: ',os.getpid(), flush=True)
     print(flush=True)
 
-    saida = []
-
     # Threads
 
     print('Threads: mesma memória (mesmo pid, ident diferente)')
-    t1 = threading.Thread(target=sum_thread)
-    t2 = threading.Thread(target=sum_thread)
-    t3 = threading.Thread(target=sum_thread)
-    t4 = threading.Thread(target=sum_thread)
-    t5 = threading.Thread(target=sum_thread)
-    t6 = threading.Thread(target=sum_thread)
+    threads = [threading.Thread(target=sum_thread) for _ in range(6)]
 
     # start() dispara o fluxo. Não cria um novo processo no SO (irá utilizar o do main)
+    for t in threads:
+        t.start()
 
-    t1.start()
-    t2.start()
-    t3.start()
-    t4.start()
-    t5.start()
-    t6.start()
-
-    t1.join()
-    t2.join()
-    t3.join()
-    t4.join()
-    t5.join()
-    t6.join()
+    for t in threads:
+        t.join()
 
     print('contador na main: ', count, flush=True)
 
@@ -59,24 +43,21 @@ if __name__ == '__main__':
     print('Processos: memoria isolada (pid novo; main nao ve n)')
 
     queue = mp.Queue()
+    n_processos = 2
 
     # queue, -> Tupla
+    processos = [mp.Process(target=sum_process, args=(queue,)) for _ in range(n_processos)]
 
-    p1 = mp.Process(target=sum_process, args=(queue,))
-    p2 = mp.Process(target=sum_process, args=(queue,))
-
-    p1.start()
-    p2.start()
+    for p in processos:
+        p.start()
 
     # get(): bloqueia até que cada filho colocar o valor na variavel
     # isso é a comunicação
+    resultados = [queue.get() for _ in range(n_processos)]
 
-    a = queue.get()
-    b = queue.get()
-
-    p1.join()
-    p2.join()
+    for p in processos:
+        p.join()
 
     print('contador na main: ', count, flush=True)
-    print('Cada processo devolveu:', a, 'e', b, flush=True)
+    print('Cada processo devolveu:', *resultados, flush=True)
 
